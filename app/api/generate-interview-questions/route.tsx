@@ -18,8 +18,7 @@ export async function POST(req: NextRequest) {
         const jobTitle = formData.get('jobTitle') as File;
         const jobDescription = formData.get('jobDescription') as File;
         const { has } = await auth();
-        const decision = await aj.protect(req, { userId: user?.primaryEmailAddress?.emailAddress ?? '', requested: 5 }); // Deduct 5 tokens from the bucket
-        console.log("Arcjet decision", decision);
+        const decision = await aj.protect(req, { userId: user?.primaryEmailAddress?.emailAddress ?? '', requested: 5 });
         const isSubscribedUser = has({ plan: 'pro' })
         //@ts-ignore
         if (decision?.reason?.remaining == 0 && !isSubscribedUser) {
@@ -30,7 +29,6 @@ export async function POST(req: NextRequest) {
         }
 
         if (file) {
-            console.log("file", formData)
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
@@ -43,34 +41,35 @@ export async function POST(req: NextRequest) {
             });
 
 
-            // Call n8n Webhook 
+            // Call n8n Webhook
 
-            const result = await axios.post('https://n8n.srv629238.hstgr.cloud/webhook/generate-interview-question', {
+            const result = await axios.post('https://jane21.app.n8n.cloud/webhook/0469141a-01d5-4ea1-a0de-4ac18321dd6a', {
                 resumeUrl: uploadResponse?.url
             });
-            console.log(result.data)
 
             return NextResponse.json({
-                questions: result.data?.message?.content?.questions || result.data?.message?.content?.interview_questions,
+                questions: result.data?.interview_questions,
                 resumeUrl: uploadResponse?.url,
                 status: 200
             });
         } else {
-            const result = await axios.post('https://n8n.srv629238.hstgr.cloud/webhook/generate-interview-question', {
+            const result = await axios.post('https://jane21.app.n8n.cloud/webhook/0469141a-01d5-4ea1-a0de-4ac18321dd6a', {
                 resumeUrl: null,
                 jobTitle: jobTitle,
                 jobDescription: jobDescription
             });
-            console.log(result.data)
 
             return NextResponse.json({
-                questions: result.data?.message?.content?.questions,
+                questions: result.data?.interview_questions,
                 resumeUrl: null
             });
         }
 
     } catch (error: any) {
-        console.error('Upload error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('Error generating interview questions:', error);
+        return NextResponse.json({
+            error: error.message,
+            status: error.response?.status || 500
+        }, { status: 500 });
     }
 }
