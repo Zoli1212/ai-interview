@@ -1,20 +1,49 @@
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import { UserButton } from '@clerk/nextjs'
+import { currentUser } from '@clerk/nextjs/server'
+import { GraduationCap } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
-function Header() {
-    return (
-        <nav className="flex w-full items-center justify-between border-t border-b border-neutral-200 px-4 py-4 dark:border-neutral-800">
-            <div className="flex items-center gap-2">
-                <Image src={'/logo.svg'} alt='logo' width={40} height={40} />
-                <h1 className="text-base font-bold md:text-2xl">AI Mock Interview</h1>
-            </div>
-            <Link href={'/dashboard'}>
-                <Button size={'lg'}>Get Started</Button>
-            </Link>
-        </nav>
+async function Header() {
+    const user = await currentUser()
 
+    return (
+        <nav className="flex w-full items-center justify-between border-b border-neutral-200 px-6 py-3 bg-white shadow-sm dark:border-neutral-800 dark:bg-black">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                    <GraduationCap className="w-6 h-6 text-primary" />
+                </div>
+                <h1 className="text-xl font-bold">Agent Teacher</h1>
+            </Link>
+
+            <div className="flex items-center gap-4">
+                {user ? (
+                    <>
+                        <Link href="/dashboard">
+                            <Button size="default">Dashboard</Button>
+                        </Link>
+                        <UserButton 
+                            afterSignOutUrl="/"
+                            appearance={{
+                                elements: {
+                                    avatarBox: "w-10 h-10"
+                                }
+                            }}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <Link href="/sign-in">
+                            <Button variant="ghost" size="default">Sign In</Button>
+                        </Link>
+                        <Link href="/sign-up">
+                            <Button size="default">Start Learning</Button>
+                        </Link>
+                    </>
+                )}
+            </div>
+        </nav>
     )
 }
 

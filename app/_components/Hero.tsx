@@ -19,7 +19,7 @@ function Hero() {
             </div>
             <div className="px-4 py-10 md:py-20">
                 <h1 className="relative z-10 mx-auto max-w-4xl text-center text-2xl font-bold text-slate-700 md:text-4xl lg:text-7xl dark:text-slate-300">
-                    {"Master Job Interview with AI-Powered Practice Sessions"
+                    {"Learn Anything with AI-Powered Teacher Agent"
                         .split(" ")
                         .map((word, index) => (
                             <motion.span
@@ -31,7 +31,7 @@ function Hero() {
                                     delay: index * 0.1,
                                     ease: "easeInOut",
                                 }}
-                                className={`mr-2 inline-block ${(index == 1 || index == 2) && 'text-primary'}`}
+                                className={`mr-2 inline-block ${(index == 2 || index == 3) && 'text-primary'}`}
                             >
                                 {word}
                             </motion.span>
@@ -50,7 +50,7 @@ function Hero() {
                     }}
                     className="relative z-10 mx-auto max-w-xl py-4 text-center text-lg font-normal text-neutral-600 dark:text-neutral-400"
                 >
-                    Prepare for your dream role with interactive AI avatars that mimic real recruiters. Get instant insights, refine your communication skills, and walk into every interview with confidence.
+                    Upload your study materials and let our AI teacher test your knowledge. Get personalized questions, instant feedback, and master any subject with interactive learning sessions.
                 </motion.p>
                 <motion.div
                     initial={{
@@ -67,7 +67,7 @@ function Hero() {
                 >
                     <Link href={'/dashboard'}>
                         <Button size={'lg'} >
-                            Explore Now
+                            Start Learning
                         </Button>
                     </Link>
                     <button className="w-60 transform rounded-lg border border-gray-300 bg-white px-6 py-2 font-medium text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-gray-900">

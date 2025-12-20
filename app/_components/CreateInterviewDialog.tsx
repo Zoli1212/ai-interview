@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useState } from 'react'
 import {
     Dialog,
     DialogClose,
@@ -15,19 +15,14 @@ import ResumeUpload from './ResumeUpload'
 import JobDescription from './JobDescription'
 import axios from 'axios'
 import { Loader2Icon } from 'lucide-react'
-import { useMutation } from 'convex/react'
-import { api } from '@/convex/_generated/api'
-import { useUserDetailContext } from '@/app/Provider'
-import { UserDetailContext } from '@/context/UserDetailContext'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { createLearningSession } from '@/lib/actions/learning-session'
 function CreateInterviewDialog() {
 
     const [formData, setFormData] = useState<any>();
     const [file, setFile] = useState<File | null>();
     const [loading, setLoading] = useState(false);
-    const { userDetail, setUserDetail } = useContext(UserDetailContext);
-    const saveInterviewQuestion = useMutation(api.Interview.SaveInterviewQuestion)
     const router = useRouter();
     const onHandleInputChange = (field: string, value: string) => {
         setFormData((prev: any) => ({
@@ -37,39 +32,35 @@ function CreateInterviewDialog() {
     }
 
     const onSubmit = async () => {
-
         setLoading(true);
-        const formData_ = new FormData();
-        formData_.append('file', file ?? '');
-        formData_?.append('jobTitle', formData?.jobTitle)
-        formData_?.append('jobDescription', formData?.jobDescription)
 
         try {
-            const res = await axios.post('api/generate-interview-questions', formData_);
-            console.log(res.data);
+            const formData_ = new FormData();
+            formData_.append('file', file ?? '');
+            formData_.append('jobTitle', formData?.jobTitle || '');
+            formData_.append('jobDescription', formData?.jobDescription || '');
 
-            if (res?.data?.status == 429) {
-                toast.warning(res?.data?.result)
-                console.log(res?.data?.result);
+            const res = await axios.post('/api/generate-learning-questions', formData_);
+
+            if (res?.data?.status === 429) {
+                toast.warning(res?.data?.result);
                 return;
             }
 
-            //Save to Database
-            //@ts-ignore
-            const interviewId = await saveInterviewQuestion({
-                questions: res.data?.questions,
-                resumeUrl: res?.data.resumeUrl ?? '',
-                uid: userDetail?._id,
-                jobTitle: formData?.jobTitle ?? '',
-                jobDescription: formData?.jobDescription ?? ''
+            // Create learning session (no questions field needed)
+            const sessionId = await createLearningSession({
+                materialUrl: res?.data?.materialUrl,
+                topic: res?.data?.topic || formData?.jobTitle,
+                topicDescription: res?.data?.topicDescription || formData?.jobDescription
             });
 
-            router.push('/interview/' + interviewId);
+            toast.success(file ? 'Learning material uploaded!' : 'Learning session created!');
+            router.push('/learning/' + sessionId);
 
-        } catch (e) {
-            console.log(e);
-        }
-        finally {
+        } catch (e: any) {
+            console.error(e);
+            toast.error('Failed to create learning session: ' + (e.message || 'Unknown error'));
+        } finally {
             setLoading(false);
         }
     }

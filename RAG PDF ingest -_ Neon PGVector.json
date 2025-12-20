@@ -1,0 +1,177 @@
+{
+  "name": "RAG PDF ingest -> Neon PGVector",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag/ingest-file",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "a5fa1d27-13c8-4b42-b371-21288a6caded",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        2320
+      ],
+      "webhookId": "rag-ingest-webhook"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "loader": "pdfLoader",
+        "options": {}
+      },
+      "id": "02ab0da7-01e6-4e40-8e7a-8797a68abeac",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        2544
+      ]
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "d1d65d66-6cbf-404d-bde9-3ece258d9497",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        2544
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "7Z7XuXwoWLRQYZRR",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "rag_chunks",
+        "options": {}
+      },
+      "id": "227d2216-4554-4ad3-b2ab-411741953caa",
+      "name": "Postgres Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        2320
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "E8vIOgXyqYHOxUdt",
+          "name": "Postgres account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'PDF ingested successfully', chunks: $('Postgres Vector Store').itemMatched(0).$node.name } }}",
+        "options": {}
+      },
+      "id": "aec486a6-35a5-4110-9f81-b7aa509bc31e",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a6484484-e72d-4147-9b14-d42550f63f14",
+      "name": "Recursive Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        2752
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Postgres Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e5cd62f7-d2d0-42cb-9e03-ccee8d0a7b3c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eebcd34a1b912ba39e2395b67d523a41cd819824d658c78246a033c7e3492e34"
+  },
+  "id": "j7YBgYWW3BTmtKAI",
+  "tags": []
+}

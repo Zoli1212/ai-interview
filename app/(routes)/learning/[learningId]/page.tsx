@@ -18,18 +18,18 @@ function Interview() {
                     className='w-full h-[300px] object-cover'
                 />
                 <div className='p-6 flex flex-col items-center space-y-5'>
-                    <h2 className='font-bold text-3xl text-center'>Ready to Start Interview?</h2>
+                    <h2 className='font-bold text-3xl text-center'>Ready to Start Learning?</h2>
                     <p className='text-gray-500 text-center'>
-                        The interview will last 30 minutes. Are you ready to begin?
+                        The learning session will be personalized based on your material. Are you ready to begin?
                     </p>
-                    <Link href={'/interview/' + interviewId + '/start'}>
-                        <Button>Start Interview <ArrowRight /></Button>
+                    <Link href={'/learning/' + interviewId + '/start'}>
+                        <Button>Start Learning <ArrowRight /></Button>
                     </Link>
 
                     <hr />
 
                     <div className='p-6 bg-gray-50 rounded-2xl'>
-                        <h2 className='font-semibold text-2xl'>Want to sent interview link to someone?</h2>
+                        <h2 className='font-semibold text-2xl'>Want to share this learning session?</h2>
                         <div className='flex gap-5 w-full items-center max-w-xl mt-2'>
                             <Input placeholder='Enter email address' className='w-full ' />
                             <Button><Send /></Button>

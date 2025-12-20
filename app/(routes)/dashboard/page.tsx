@@ -1,37 +1,37 @@
 "use client"
-import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/nextjs'
-import React, { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import CreateInterviewDialog from '../_components/CreateInterviewDialog';
-import { useConvex } from 'convex/react';
-import { UserDetailContext } from '@/context/UserDetailContext';
-import { api } from '@/convex/_generated/api';
-import { InterviewData } from '../interview/[interviewId]/start/page';
+import CreateInterviewDialog from '../_components/CreateLearningDialog';
+import { InterviewData } from '../learning/[learningId]/start/page';
 import EmptyState from './_components/EmptyState';
-import InterviewCard from './_components/InterviewCard';
+import InterviewCard from './_components/LearningCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getLearningSessions } from '@/lib/actions/learning-session';
 
 
 function Dashboard() {
     const { user } = useUser();
     const [interviewList, setInterviewList] = useState<InterviewData[]>([]);
-    const { userDetail, setUserDetail } = useContext(UserDetailContext);
-    const convex = useConvex();
     const [loading, setLoading] = useState(true);
+
     useEffect(() => {
-        userDetail && GetInterviewList();
-    }, [userDetail])
+        GetInterviewList();
+    }, [user])
 
     const GetInterviewList = async () => {
+        if (!user) return;
         setLoading(true);
-        const result = await convex.query(api.Interview.GetInterviewList, {
-            uid: userDetail?._id
-        });
-        console.log(result);
-        //@ts-ignore
-        setInterviewList(result);
-        setLoading(false);
+        try {
+            const result = await getLearningSessions();
+            console.log(result);
+            //@ts-ignore
+            setInterviewList(result);
+        } catch (error) {
+            console.error('Error fetching learning sessions:', error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (

@@ -1,27 +1,20 @@
 "use client"
-import { api } from '@/convex/_generated/api';
 import axios from 'axios';
-import { useConvex, useMutation } from 'convex/react';
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Mic, MicOff, PhoneCall, PhoneOff, User, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { FeedbackInfo } from '@/app/(routes)/dashboard/_components/FeedbackDialog';
+import { getLearningSession, updateLearningSessionFeedback, queryRagKnowledge } from '@/lib/actions/learning-session';
 
-export type InterviewData = {
-    jobTitle: string | null,
-    jobDescription: string | null,
-    interviewQuestions: InterviewQuestions[],
+export type LearningData = {
+    topic: string | null,
+    topicDescription: string | null,
     userId: string | null,
-    _id: string,
-    resumeUrl: string | null,
+    id: string,
+    materialUrl: string | null,
     status: string | null,
     feedback: FeedbackInfo | null
-}
-
-type InterviewQuestions = {
-    answer: string,
-    question: string
 }
 
 type Messages = {
@@ -32,26 +25,30 @@ type Messages = {
 const AGENT_ID = process.env.NEXT_PUBLIC_DID_AGENT_ID!;
 const CLIENT_KEY = process.env.NEXT_PUBLIC_DID_CLIENT_KEY!;
 
-function StartInterview() {
-    const { interviewId } = useParams();
-    const convex = useConvex();
-    const [interviewData, setInterviewData] = useState<InterviewData>();
+function StartLearning() {
+    const { learningId } = useParams();
+    const [learningData, setLearningData] = useState<LearningData>();
     const videoRef = useRef<HTMLVideoElement>(null);
     const [micOn, setMicOn] = useState(false);
     const [joined, setJoined] = useState(false);
     const [loading, setLoading] = useState(false);
     const [messages, setMessages] = useState<Messages[]>([]);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [agentManager, setAgentManager] = useState<any>(null);
     const [srcObject, setSrcObject] = useState<MediaStream | null>(null);
-    const updateFeedback = useMutation(api.Interview.UpdateFeedback);
     const router = useRouter();
     const recognitionRef = useRef<any>(null);
     const [isListening, setIsListening] = useState(false);
 
     useEffect(() => {
-        GetInterviewQuestions();
-    }, [interviewId])
+        GetLearningSession();
+    }, [learningId])
+
+    const GetLearningSession = async () => {
+        const result = await getLearningSession(learningId as string);
+        console.log('[Learning] Session data:', result);
+        //@ts-ignore
+        setLearningData(result);
+    }
 
     // Initialize Web Speech Recognition
     useEffect(() => {
@@ -114,15 +111,6 @@ function StartInterview() {
         };
     }, [joined, micOn]);
 
-    const GetInterviewQuestions = async () => {
-        const result = await convex.query(api.Interview.GetInterviewQuestions, {
-            //@ts-ignore
-            interviewRecordId: interviewId
-        });
-        console.log(result);
-        //@ts-ignore
-        setInterviewData(result);
-    }
 
     const startListening = () => {
         if (recognitionRef.current && !isListening) {
@@ -196,9 +184,9 @@ function StartInterview() {
                 onConnectionStateChange(state: string) {
                     console.log('[D-ID] Connection state:', state);
                     if (state === "connected") {
-                        toast.success('Connected to interviewer!');
+                        toast.success('Connected to teacher!');
                     } else if (state === "disconnected") {
-                        toast.info('Disconnected from interviewer');
+                        toast.info('Disconnected from teacher');
                     }
                 },
                 onNewMessage(newMessages: any[], type: string) {
@@ -236,7 +224,7 @@ function StartInterview() {
             return manager;
         } catch (error) {
             console.error('[D-ID] Failed to initialize agent:', error);
-            toast.error('Failed to initialize interviewer');
+            toast.error('Failed to initialize teacher');
             return null;
         }
     };
@@ -274,25 +262,26 @@ function StartInterview() {
             console.log('[D-ID] Connecting to agent...');
             await manager.connect();
 
-            // Start with introduction and first question
-            const intro = "Hello! I'm your interviewer today. Let's begin with the first question.";
-            const firstQuestion = interviewData?.interviewQuestions[0]?.question;
+            // Load initial RAG context for the topic
+            const topic = learningData?.topic || 'General Learning';
+            const ragResults = await queryRagKnowledge(topic, 10);
 
-            if (!firstQuestion) {
-                toast.error('No interview questions found');
-                return;
-            }
+            const contextText = ragResults.map(r => r.text).filter(Boolean).join('\n\n');
 
-            // Build clear prompt - make it obvious the agent should ASK the question
-            const openingPrompt = `You are the interviewer. Say: "${intro}" Then ask the candidate this question: "${firstQuestion}"`;
+            console.log('[RAG] Loaded initial context:', ragResults.length, 'chunks');
+
+            // Build opening prompt with RAG context
+            const openingPrompt = `You are an AI teacher. You will teach the learner about "${topic}".
+
+Here is your knowledge base about this topic:
+${contextText}
+
+Start by introducing yourself and begin teaching the topic. Explain the key concepts, ask questions to check understanding, and have a natural conversation with the learner.`;
 
             // Make agent speak using chat
             await manager.chat(openingPrompt);
 
-            // Move to next question index
-            setCurrentQuestionIndex(prev => prev + 1);
-
-            toast.success('Interview started! Speak your answer.');
+            toast.success('Learning session started! You can ask questions or respond.');
             setMicOn(true);
 
             // Start listening for user's response after agent finishes speaking
@@ -316,28 +305,23 @@ function StartInterview() {
         setMessages(prev => [...prev, { from: 'user', text: transcript }]);
 
         try {
-            // Send user response to agent and get next question
-            if (currentQuestionIndex < (interviewData?.interviewQuestions.length || 0)) {
-                const nextQuestion = interviewData?.interviewQuestions[currentQuestionIndex].question;
+            // Query RAG for relevant context based on user's question/statement
+            const ragResults = await queryRagKnowledge(transcript, 5);
+            const contextText = ragResults.map(r => r.text).filter(Boolean).join('\n\n');
 
-                if (nextQuestion) {
-                    // First, send the user's response to the agent
-                    // Then instruct it to acknowledge and ask the next question
-                    const prompt = `Candidate's answer: "${transcript}"\n\nYou are the interviewer. Give brief feedback on their answer (1 sentence), then ask this next question: "${nextQuestion}"`;
+            console.log('[RAG] Retrieved context for user input:', ragResults.length, 'chunks');
 
-                    // Use chat to let the agent respond naturally
-                    await agentManager.chat(prompt);
-                    setCurrentQuestionIndex(prev => prev + 1);
-                }
-            } else {
-                // Interview finished - send final response first
-                const finalPrompt = `Candidate's answer: "${transcript}"\n\nThank the candidate for their time and conclude the interview.`;
-                await agentManager.chat(finalPrompt);
+            // Build prompt with RAG context
+            const prompt = `Learner said: "${transcript}"
 
-                setTimeout(() => {
-                    leaveConversation();
-                }, 3000);
-            }
+Relevant knowledge from your knowledge base:
+${contextText}
+
+As an AI teacher, respond naturally to the learner. If they asked a question, answer it based on the knowledge above. If they made a statement, provide feedback and continue teaching. Keep the conversation flowing naturally.`;
+
+            // D-ID responds with RAG context
+            await agentManager.chat(prompt);
+
         } catch (error) {
             console.error('[D-ID] Error processing response:', error);
             toast.error('Failed to process your response');
@@ -383,13 +367,12 @@ function StartInterview() {
         console.log(result.data);
         toast.success('Feedback Ready!');
 
-        const resp = await updateFeedback({
-            feedback: result.data,
-            //@ts-ignore
-            recordId: interviewId
-        });
+        const resp = await updateLearningSessionFeedback(
+            learningId as string,
+            result.data
+        );
         console.log(resp);
-        toast.success('Interview Completed!');
+        toast.success('Learning session completed!');
 
         router.replace('/dashboard');
     }
@@ -397,7 +380,7 @@ function StartInterview() {
     return (
         <div className='flex flex-col lg:flex-row w-full min-h-screen bg-gray-50'>
             <div className='flex flex-col items-center p-6 lg:w-2/3'>
-                <h2 className='text-2xl font-bold mb-6'>Interview Session (D-ID Powered)</h2>
+                <h2 className='text-2xl font-bold mb-6'>Learning Session (D-ID Powered)</h2>
                 <div
                     className='rounded-2xl overflow-hidden border bg-black flex items-center justify-center relative'
                     style={{
@@ -444,7 +427,7 @@ function StartInterview() {
                     {!joined ? (
                         <button
                             onClick={StartConversation}
-                            disabled={loading || !interviewData}
+                            disabled={loading || !learningData}
                             className="flex items-center px-5 py-3 bg-green-500 text-white hover:bg-green-400 rounded-full shadow-lg transition disabled:opacity-50"
                         >
                             <PhoneCall className="mr-2" size={20} />
@@ -481,7 +464,7 @@ function StartInterview() {
                 </div>
 
                 <div className="mt-4 text-sm text-gray-600">
-                    <p>Question {currentQuestionIndex} of {interviewData?.interviewQuestions.length || 0}</p>
+                    <p>Teaching: {learningData?.topic || 'Loading...'}</p>
                 </div>
             </div>
 
@@ -508,7 +491,7 @@ function StartInterview() {
                                         }`}
                                     >
                                         <p className="text-xs font-semibold mb-1">
-                                            {msg.from === 'user' ? 'You' : 'Interviewer'}
+                                            {msg.from === 'user' ? 'You' : 'Teacher'}
                                         </p>
                                         <p className="text-sm">{msg.text}</p>
                                     </div>
@@ -522,4 +505,4 @@ function StartInterview() {
     )
 }
 
-export default StartInterview
+export default StartLearning

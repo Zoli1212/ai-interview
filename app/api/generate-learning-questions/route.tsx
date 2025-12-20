@@ -10,13 +10,14 @@ const imagekit = new ImageKit({
     privateKey: process.env.IMAGEKIT_URL_PRIVATE_KEY!,
     urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT!,
 });
+
 export async function POST(req: NextRequest) {
     try {
         const user = await currentUser();
         const formData = await req.formData();
         const file = formData.get('file') as File;
-        const jobTitle = formData.get('jobTitle') as File;
-        const jobDescription = formData.get('jobDescription') as File;
+        const jobTitle = formData.get('jobTitle') as string;
+        const jobDescription = formData.get('jobDescription') as string;
         const { has } = await auth();
         const decision = await aj.protect(req, { userId: user?.primaryEmailAddress?.emailAddress ?? '', requested: 5 });
         const isSubscribedUser = has({ plan: 'pro' })
@@ -32,41 +33,47 @@ export async function POST(req: NextRequest) {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
-
+            // 1. Upload to ImageKit for storage and URL
             const uploadResponse = await imagekit.upload({
                 file: buffer,
-                fileName: `upload-${Date.now()}.pdf`,
-                isPrivateFile: false, // optional
+                fileName: 'learning-material-' + Date.now() + '.pdf',
+                isPrivateFile: false,
                 useUniqueFileName: true,
             });
 
+            // 2. Send PDF directly to n8n webhook for RAG processing
+            const n8nFormData = new FormData();
+            // Create a Blob from the buffer and append as file
+            const pdfBlob = new Blob([buffer], { type: 'application/pdf' });
+            n8nFormData.append('file', pdfBlob, file.name);
+            n8nFormData.append('userId', user?.id || '');
+            n8nFormData.append('topic', jobTitle || 'General Learning');
+            n8nFormData.append('topicDescription', jobDescription || '');
 
-            // Call n8n Webhook
-
-            const result = await axios.post('https://jane21.app.n8n.cloud/webhook/0469141a-01d5-4ea1-a0de-4ac18321dd6a', {
-                resumeUrl: uploadResponse?.url
+            await axios.post('https://jane21.app.n8n.cloud/webhook/rag/ingest-file', n8nFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
             return NextResponse.json({
-                questions: result.data?.interview_questions,
-                resumeUrl: uploadResponse?.url,
+                materialUrl: uploadResponse?.url,
+                topic: jobTitle || 'General Learning',
+                topicDescription: jobDescription || '',
                 status: 200
             });
         } else {
-            const result = await axios.post('https://jane21.app.n8n.cloud/webhook/0469141a-01d5-4ea1-a0de-4ac18321dd6a', {
-                resumeUrl: null,
-                jobTitle: jobTitle,
-                jobDescription: jobDescription
-            });
-
+            // No file - just create session with topic
             return NextResponse.json({
-                questions: result.data?.interview_questions,
-                resumeUrl: null
+                topic: jobTitle || 'General Learning',
+                topicDescription: jobDescription || '',
+                materialUrl: null,
+                status: 200
             });
         }
 
     } catch (error: any) {
-        console.error('Error generating interview questions:', error);
+        console.error('Error generating learning questions:', error);
         return NextResponse.json({
             error: error.message,
             status: error.response?.status || 500
