@@ -41,9 +41,9 @@ function CreateInterviewDialog() {
         try {
             // Create learning session directly (no file upload)
             const sessionId = await createLearningSession({
-                materialUrl: null,
+                materialUrl: undefined,
                 topic: formData.jobTitle,
-                topicDescription: formData?.jobDescription || null
+                topicDescription: formData?.jobDescription || undefined
             });
 
             toast.success('Interview session created!');
