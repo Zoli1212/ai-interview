@@ -1,12 +1,12 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
-import { UserButton } from '@clerk/nextjs'
-import { currentUser } from '@clerk/nextjs/server'
+import { UserButton, useUser } from '@clerk/nextjs'
 import { GraduationCap } from 'lucide-react'
 import Link from 'next/link'
-import React from 'react'
 
-async function Header() {
-    const user = await currentUser()
+function Header() {
+    const { user } = useUser()
 
     return (
         <nav className="flex w-full items-center justify-between border-b border-neutral-200 px-6 py-3 bg-white shadow-sm dark:border-neutral-800 dark:bg-black">
@@ -23,8 +23,7 @@ async function Header() {
                         <Link href="/dashboard">
                             <Button size="default">Dashboard</Button>
                         </Link>
-                        <UserButton 
-                            afterSignOutUrl="/"
+                        <UserButton
                             appearance={{
                                 elements: {
                                     avatarBox: "w-10 h-10"
