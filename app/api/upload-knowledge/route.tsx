@@ -6,9 +6,9 @@ import axios from 'axios';
 export async function POST(req: NextRequest) {
     // Initialize ImageKit only when needed
     const imagekit = new ImageKit({
-        publicKey: process.env.IMAGEKIT_URL_PUBLIC_KEY || '',
-        privateKey: process.env.IMAGEKIT_URL_PRIVATE_KEY || '',
-        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || '',
+        publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_URL_PUBLIC_KEY || '',
+        privateKey: process.env.NEXT_PUBLIC_IMAGEKIT_URL_PRIVATE_KEY || '',
+        urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || '',
     });
     try {
         const { userId } = await auth();
