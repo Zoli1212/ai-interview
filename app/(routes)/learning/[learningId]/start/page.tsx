@@ -184,9 +184,9 @@ function StartLearning() {
                 onConnectionStateChange(state: string) {
                     console.log('[D-ID] Connection state:', state);
                     if (state === "connected") {
-                        toast.success('Connected to teacher!');
+                        toast.success('Connected to interviewer!');
                     } else if (state === "disconnected") {
-                        toast.info('Disconnected from teacher');
+                        toast.info('Disconnected from interviewer');
                     }
                 },
                 onNewMessage(newMessages: any[], type: string) {
@@ -224,7 +224,7 @@ function StartLearning() {
             return manager;
         } catch (error) {
             console.error('[D-ID] Failed to initialize agent:', error);
-            toast.error('Failed to initialize teacher');
+            toast.error('Failed to initialize interviewer');
             return null;
         }
     };
@@ -262,26 +262,39 @@ function StartLearning() {
             console.log('[D-ID] Connecting to agent...');
             await manager.connect();
 
-            // Load initial RAG context for the topic
-            const topic = learningData?.topic || 'General Learning';
-            const ragResults = await queryRagKnowledge(topic, 10);
+            // Load initial RAG context based on job position
+            const jobPosition = learningData?.topic || 'this position';
+            const jobDescription = learningData?.topicDescription || '';
+
+            // Query company knowledge base for interview context
+            const searchQuery = jobPosition + ' ' + jobDescription;
+            const ragResults = await queryRagKnowledge(searchQuery, 10);
 
             const contextText = ragResults.map(r => r.text).filter(Boolean).join('\n\n');
 
-            console.log('[RAG] Loaded initial context:', ragResults.length, 'chunks');
+            console.log('[RAG] Loaded company knowledge:', ragResults.length, 'chunks');
 
-            // Build opening prompt with RAG context
-            const openingPrompt = `You are an AI teacher. You will teach the learner about "${topic}".
+            // Build opening prompt for free-form interview (must be under 800 chars for D-ID)
+            const companyContext = contextText.substring(0, 150);
+            const openingPrompt = `You're an AI interviewer for ${jobPosition}. ${jobDescription ? jobDescription.substring(0, 80) : ''}
 
-Here is your knowledge base about this topic:
-${contextText}
+Company values: ${companyContext}
 
-Start by introducing yourself and begin teaching the topic. Explain the key concepts, ask questions to check understanding, and have a natural conversation with the learner.`;
+Instructions:
+- Introduce yourself & the position
+- Ask candidate's name & background
+- Natural conversation, not rigid Q&A
+- Open-ended questions about experience
+- Assess cultural fit
+- 2-3 sentences per response
+- Let conversation flow naturally
+
+Begin by greeting and asking their name.`;
 
             // Make agent speak using chat
             await manager.chat(openingPrompt);
 
-            toast.success('Learning session started! You can ask questions or respond.');
+            toast.success('Interview started! Speak naturally and share your thoughts.');
             setMicOn(true);
 
             // Start listening for user's response after agent finishes speaking
@@ -312,12 +325,20 @@ Start by introducing yourself and begin teaching the topic. Explain the key conc
             console.log('[RAG] Retrieved context for user input:', ragResults.length, 'chunks');
 
             // Build prompt with RAG context
-            const prompt = `Learner said: "${transcript}"
+            const prompt = `LEARNER'S RESPONSE: "${transcript}"
 
-Relevant knowledge from your knowledge base:
+RELEVANT KNOWLEDGE FROM YOUR KNOWLEDGE BASE:
 ${contextText}
 
-As an AI teacher, respond naturally to the learner. If they asked a question, answer it based on the knowledge above. If they made a statement, provide feedback and continue teaching. Keep the conversation flowing naturally.`;
+INSTRUCTIONS:
+- If the learner answered a question: Provide specific feedback on their answer (correct/partially correct/incorrect)
+- If the learner asked a question: Answer it thoroughly using the knowledge base above
+- After addressing their response, continue teaching the next concept or ask a follow-up question
+- Use the knowledge base to ensure accuracy
+- Keep responses concise (2-3 sentences) and conversational
+- Encourage the learner and maintain an engaging teaching style
+
+Respond now:`;
 
             // D-ID responds with RAG context
             await agentManager.chat(prompt);
@@ -380,7 +401,7 @@ As an AI teacher, respond naturally to the learner. If they asked a question, an
     return (
         <div className='flex flex-col lg:flex-row w-full min-h-screen bg-gray-50'>
             <div className='flex flex-col items-center p-6 lg:w-2/3'>
-                <h2 className='text-2xl font-bold mb-6'>Learning Session (D-ID Powered)</h2>
+                <h2 className='text-2xl font-bold mb-6'>Interview Session (D-ID Powered)</h2>
                 <div
                     className='rounded-2xl overflow-hidden border bg-black flex items-center justify-center relative'
                     style={{
@@ -491,7 +512,7 @@ As an AI teacher, respond naturally to the learner. If they asked a question, an
                                         }`}
                                     >
                                         <p className="text-xs font-semibold mb-1">
-                                            {msg.from === 'user' ? 'You' : 'Teacher'}
+                                            {msg.from === 'user' ? 'Candidate' : 'AI Interviewer'}
                                         </p>
                                         <p className="text-sm">{msg.text}</p>
                                     </div>

@@ -25,7 +25,7 @@ function AppHeader() {
                 <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
                     <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
-                <h1 className="text-xl font-bold hidden md:block">Agent Teacher</h1>
+                <h1 className="text-xl font-bold hidden md:block">AI Interview Platform</h1>
             </Link>
             
             <div className="flex items-center gap-6">

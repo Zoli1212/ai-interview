@@ -7,14 +7,14 @@ function JobDescription({ onHandleInputChange }: any) {
     return (
         <div className='border rounded-2xl p-10'>
             <div>
-                <label>Topic/Subject</label>
-                <Input placeholder='Ex. JavaScript Fundamentals, Biology Chapter 5'
+                <label className='font-medium'>Job Position</label>
+                <Input placeholder='Ex. Packaging Worker'
                     onChange={(event) => onHandleInputChange('jobTitle', event.target.value)}
                 />
             </div>
             <div className='mt-6'>
-                <label>Additional Context (Optional)</label>
-                <Textarea placeholder='Enter any specific topics or areas you want to focus on'
+                <label className='font-medium'>Job Description / Requirements (Optional)</label>
+                <Textarea placeholder='Ex. Packaging at large corporations'
                     className='h-[200px]'
                     onChange={(event) => onHandleInputChange('jobDescription', event.target.value)}
                 />

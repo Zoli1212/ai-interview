@@ -4,13 +4,14 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 
 import { Toaster } from "@/components/ui/sonner";
+import { UserSyncProvider } from "@/components/providers/UserSyncProvider";
 
 
 
 
 export const metadata: Metadata = {
-  title: "Agent Teacher - AI Learning Assistant",
-  description: "Learn with AI-powered teacher that asks questions based on your study materials",
+  title: "AI Interview Platform - Company Knowledge-Based Interviews",
+  description: "Conduct AI-powered interviews using your company knowledge base for natural, insightful candidate assessments",
 };
 
 const outfit = Outfit({ subsets: ['latin'] })
@@ -26,9 +27,10 @@ export default function RootLayout({
         <body
           className={outfit.className}
         >
+          <UserSyncProvider>
             {children}
             <Toaster />
-       
+          </UserSyncProvider>
         </body>
       </html>
     </ClerkProvider>

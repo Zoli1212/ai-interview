@@ -1,5 +1,4 @@
-import React from 'react'
-import { InterviewData } from '../../learning/[learningId]/start/page'
+import { LearningData } from '../../learning/[learningId]/start/page'
 import { Badge } from "@/components/ui/badge"
 import { Button } from '@/components/ui/button'
 import { ArrowRight, BookOpen } from 'lucide-react'
@@ -7,7 +6,7 @@ import Link from 'next/link'
 import FeedbackDialog from './FeedbackDialog'
 
 type props = {
-    interviewInfo: InterviewData
+    interviewInfo: LearningData
 }
 
 function InterviewCard({ interviewInfo }: props) {
@@ -20,7 +19,7 @@ function InterviewCard({ interviewInfo }: props) {
                 <div className='flex-1 min-w-0'>
                     <h2 className='font-semibold text-lg flex justify-between items-start gap-2'>
                         <span className='truncate'>
-                            {interviewInfo?.resumeUrl ? 'Learning Session' : interviewInfo.jobTitle || 'Learning Session'}
+                            {interviewInfo?.topic || 'Learning Session'}
                         </span>
                         <Badge variant={interviewInfo?.status === 'completed' ? 'default' : 'secondary'}>
                             {interviewInfo?.status}
@@ -28,18 +27,16 @@ function InterviewCard({ interviewInfo }: props) {
                     </h2>
                 </div>
             </div>
-            
+
             <p className='line-clamp-2 text-sm text-gray-600 mb-4'>
-                {interviewInfo?.resumeUrl 
-                    ? 'AI teacher will ask questions based on your uploaded learning material.' 
-                    : interviewInfo.jobDescription || 'Interactive learning session with AI teacher'}
+                {interviewInfo?.topicDescription || 'AI-conducted interview session'}
             </p>
 
             <div className='flex justify-between items-center gap-3'>
                 {interviewInfo?.feedback && <FeedbackDialog feedbackInfo={interviewInfo.feedback} />}
-                <Link href={'/learning/' + interviewInfo?._id} className='ml-auto'>
+                <Link href={'/learning/' + interviewInfo?.id} className='ml-auto'>
                     <Button variant='outline' size='sm'>
-                        {interviewInfo?.status === 'completed' ? 'Review' : 'Start Session'} 
+                        {interviewInfo?.status === 'completed' ? 'Review' : 'Start Session'}
                         <ArrowRight className='ml-2 w-4 h-4' />
                     </Button>
                 </Link>

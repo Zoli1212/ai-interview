@@ -40,12 +40,12 @@ model LearningSession {
 }
 
 model RagChunk {
-  id        String                 @id
+  id        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   text      String?
   metadata  Json?
   embedding Unsupported("vector")?
-  createdAt DateTime               @default(now())
   userId    String?
+  createdAt DateTime               @default(now())
 
   @@index([userId])
   @@map("rag_chunks")

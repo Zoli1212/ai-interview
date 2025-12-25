@@ -10,10 +10,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ResumeUpload from './ResumeUpload'
 import JobDescription from './JobDescription'
-import axios from 'axios'
 import { Loader2Icon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -22,7 +19,6 @@ import { createLearningSession } from '@/lib/actions/learning-session'
 function CreateInterviewDialog() {
 
     const [formData, setFormData] = useState<any>();
-    const [file, setFile] = useState<File | null>();
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
@@ -34,47 +30,29 @@ function CreateInterviewDialog() {
     }
 
     const onSubmit = async () => {
-        // Validation: Both PDF and topic details are required
-        if (!file) {
-            toast.error('Please upload a learning material (PDF)');
-            return;
-        }
+        // Validation: Only topic is required
         if (!formData?.jobTitle) {
             toast.error('Please provide a topic title');
             return;
         }
 
         setLoading(true);
-        const formData_ = new FormData();
-        formData_.append('file', file);
-        formData_.append('jobTitle', formData.jobTitle);
-        formData_.append('jobDescription', formData?.jobDescription || '');
 
         try {
-            const res = await axios.post('api/generate-learning-questions', formData_);
-            console.log(res.data);
-
-            if (res?.data?.status == 429) {
-                toast.warning(res?.data?.result)
-                console.log(res?.data?.result);
-                return;
-            }
-
-            //Save to Database with Prisma
+            // Create learning session directly (no file upload)
             const sessionId = await createLearningSession({
-                materialUrl: res?.data?.materialUrl,
-                topic: res?.data?.topic || formData?.jobTitle,
-                topicDescription: res?.data?.topicDescription || formData?.jobDescription
+                materialUrl: null,
+                topic: formData.jobTitle,
+                topicDescription: formData?.jobDescription || null
             });
 
-            toast.success(file ? 'Learning material uploaded!' : 'Learning session created!');
+            toast.success('Interview session created!');
             router.push('/learning/' + sessionId);
 
         } catch (e: any) {
             console.error(e);
             toast.error('Failed to create learning session: ' + (e.message || 'Unknown error'));
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
     }
@@ -83,22 +61,18 @@ function CreateInterviewDialog() {
     return (
         <Dialog>
             <DialogTrigger>
-                <Button>+ Create Learning Session</Button>
+                <Button>+ Start New Interview</Button>
             </DialogTrigger>
-            <DialogContent className='min-w-3xl'>
+            <DialogContent className='max-w-2xl'>
                 <DialogHeader>
-                    <DialogTitle>Please submit following details.</DialogTitle>
+                    <DialogTitle>Create Interview Session</DialogTitle>
                     <DialogDescription>
-                        <Tabs defaultValue="resume-upload" className="w-full mt-5">
-                            <TabsList>
-                                <TabsTrigger value="resume-upload">Learning Material</TabsTrigger>
-                                <TabsTrigger value="job-description">Topic Details</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="resume-upload"><ResumeUpload setFiles={(file: any) => setFile(file)} /></TabsContent>
-                            <TabsContent value="job-description"><JobDescription onHandleInputChange={onHandleInputChange} /></TabsContent>
-                        </Tabs>
+                        Create a new interview session. The AI interviewer will conduct a free-form conversation based on your company's knowledge base.
                     </DialogDescription>
                 </DialogHeader>
+                <div className="py-4">
+                    <JobDescription onHandleInputChange={onHandleInputChange} />
+                </div>
                 <DialogFooter className='flex gap-6'>
                     <DialogClose>
                         <Button variant={'ghost'}>Cancel</Button>

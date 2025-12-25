@@ -54,7 +54,7 @@ function CreateInterviewDialog() {
                 topicDescription: res?.data?.topicDescription || formData?.jobDescription
             });
 
-            toast.success(file ? 'Learning material uploaded!' : 'Learning session created!');
+            toast.success(file ? 'Learning material uploaded!' : 'Interview session created!');
             router.push('/learning/' + sessionId);
 
         } catch (e: any) {

@@ -3,7 +3,8 @@ import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 
 import CreateInterviewDialog from '../_components/CreateLearningDialog';
-import { InterviewData } from '../learning/[learningId]/start/page';
+import UploadKnowledgeDialog from '../_components/UploadKnowledgeDialog';
+import { LearningData } from '../learning/[learningId]/start/page';
 import EmptyState from './_components/EmptyState';
 import InterviewCard from './_components/LearningCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +13,7 @@ import { getLearningSessions } from '@/lib/actions/learning-session';
 
 function Dashboard() {
     const { user } = useUser();
-    const [interviewList, setInterviewList] = useState<InterviewData[]>([]);
+    const [interviewList, setInterviewList] = useState<LearningData[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -42,7 +43,10 @@ function Dashboard() {
                     <h2 className='text-lg text-gray-500'>My Dashboard</h2>
                     <h2 className='text-3xl font-bold'>Welcome, {user?.fullName} </h2>
                 </div>
-                <CreateInterviewDialog />
+                <div className='flex gap-3'>
+                    <UploadKnowledgeDialog />
+                    <CreateInterviewDialog />
+                </div>
             </div>
             {!loading && interviewList.length == 0 ?
                 <EmptyState /> :
