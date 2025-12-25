@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@arcjet/next": "^1.0.0-beta.15",
-    "@clerk/nextjs": "^6.35.5",
+    "@clerk/nextjs": "^6.36.5",
     "@d-id/client-sdk": "^1.1.18",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.0.0",
