@@ -25,6 +25,10 @@ type Messages = {
 const AGENT_ID = process.env.NEXT_PUBLIC_DID_AGENT_ID!;
 const CLIENT_KEY = process.env.NEXT_PUBLIC_DID_CLIENT_KEY!;
 
+// Debug env variables
+console.log("clientKey length", process.env.NEXT_PUBLIC_DID_CLIENT_KEY?.length);
+console.log("agentId", AGENT_ID);
+
 function StartLearning() {
     const { learningId } = useParams();
     const [learningData, setLearningData] = useState<LearningData>();
