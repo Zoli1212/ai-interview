@@ -38,3 +38,6 @@ All "Interview" references in UI text need updating to "Learning Session"
 1. **HIGH**: start/page.tsx prompts (affects user experience directly)
 2. **MEDIUM**: Dashboard UI labels
 3. **LOW**: Internal variable names (optional)
+
+deployment
+
