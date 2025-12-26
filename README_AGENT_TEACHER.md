@@ -221,3 +221,4 @@ This is a corporate training platform. Contact admin for access.
 ---
 
 **Status**: ✅ Core features complete, Prisma migration in progress
+## 📝 License
